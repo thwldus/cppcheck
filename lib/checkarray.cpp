@@ -10,6 +10,11 @@
 
 //---------------------------------------------------------------------------
 
+// Register this check class (by creating a static instance of it)
+namespace {
+    CheckArray instance;
+}
+
 // CWE ids used:
 static const CWE CWE129(129U);  // Improper Validation of Array Index
 
