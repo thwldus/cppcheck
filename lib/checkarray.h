@@ -26,6 +26,7 @@ private:
     }
 
     void uncheckedIndex();
+    void uncheckedIndexError(const Token* tok);
 
     void getErrorMessages(ErrorLogger *errorLogger, const Settings *settings) const override {
         CheckArray c(nullptr, settings, errorLogger);

@@ -24,7 +24,7 @@ static const CWE CWE129(129U);  // Improper Validation of Array Index
 
 void CheckArray::uncheckedIndex()
 {
-    std::cout << "indexvalid Testing...\n";
+    // std::cout << "indexvalid Testing...\n";
     logChecker("CheckArray::uncheckedIndex");
 
     for (const Token *tok = mTokenizer->tokens(); tok; tok = tok->next()){
@@ -61,9 +61,9 @@ void CheckArray::uncheckedIndex()
                 // 정수 범위를 벗어난 경우 
             }
             if (!b){   
-                std::cout << "________________\n\n";
-                std::cout << " ▶  검사 배열 인덱스 변수 정보:\n" ;
-                std::cout << "  - 인덱스: " << idx->index() << " (위치: " << idx->linenr() << "번째 줄)\n";
+                // std::cout << "________________\n\n";
+                // std::cout << " ▶  검사 배열 인덱스 변수 정보:\n" ;
+                // std::cout << "  - 인덱스: " << idx->index() << " (위치: " << idx->linenr() << "번째 줄)\n";
             
                 // Checking
                 bool indexCheck = false;
@@ -82,10 +82,18 @@ void CheckArray::uncheckedIndex()
                     } 
                 }
                 if (!indexCheck) {
-                    std::cout << "CWE-129 error detection: " << idx->str() <<"\n";
+                    // std::cout << "CWE-129 error detection: " << idx->str() <<"\n";
+                    uncheckedIndexError(tok);
                 }
             }
         }
     }
 
+}
+
+void CheckArray::uncheckedIndexError(const Token* tok)
+{
+    // severity, id, msg 등 필요 시 추가 조정
+    reportError(tok, Severity::error, "uncheckedArrayIndex", 
+        "Index variable in array used without proper validation", CWE129, Certainty::normal);
 }
