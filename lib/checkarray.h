@@ -30,6 +30,7 @@ private:
 
     void getErrorMessages(ErrorLogger *errorLogger, const Settings *settings) const override {
         CheckArray c(nullptr, settings, errorLogger);
+        c.uncheckedIndexError(nullptr);
     }
 
     static std::string myName() {
