@@ -211,6 +211,9 @@ void CheckOther::checkImproperNeutralizationElements()
                         std::string funcName = sameTok->str();
                         
                         if(funcName.find("encode") != std::string::npos){
+                            // 인코딩 함수에서 보통 첫번째가 encode되어 저장된 변수 
+                            if (sameLineTokens.size() > 3)
+                                break;
                             // varToken에서 existingToken 제거
                             std::cout << "Removed variable: " << existingToken->str() << " from varToken\n";
                             varToken.erase(existingToken);
@@ -235,10 +238,6 @@ void CheckOther::checkImproperNeutralizationElements()
         sameLineTokens.push_back(tok);
     }
     
-    /*std::cout << "Unique variable tokens: \n";
-    for (const Token *tok : varToken) {
-        std::cout << tok->str() << "\n";
-    }*/
 }
 
 //---------------------------------------------------------------------------
