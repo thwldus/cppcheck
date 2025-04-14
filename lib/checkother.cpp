@@ -214,15 +214,16 @@ void CheckOther::checkImproperNeutralizationElements()
                             // varToken에서 existingToken 제거
                             std::cout << "Removed variable: " << existingToken->str() << " from varToken\n";
                             varToken.erase(existingToken);
-                            break;
                         }
                         // 인젝션 위험 함수이면서 existingToken이 nullptr이 아니라면(varToken에 있는 변수),
                         // 별도의 검사과정을 거치지 않은 것이므로 취약하다고 판단
                         if(checkFuncs.find(funcName) != checkFuncs.end()){
+                            // 검사 함수들의 dest인 첫번째 매개변수에 대해서도 취약하다고 판단하기 때문 
+                            if(sameLineTokens.size() < 3)
+                                break;
                             // 취약하다고 판단 
                             std::cout << "⚠️   Warning : Variable \"" << tokenStr << " in " << funcName 
                                     << "\" is used without proper validation at line " << tokLine << "\n";
-                            break;
                         }
                     }
                 }
