@@ -156,7 +156,7 @@ void CheckOther::checkCastIntToCharAndBackError(const Token *tok, const std::str
 //---------------------------------------------------------------------------
 void CheckOther::checkImproperNeutralizationElements()
 {
-    std::cout << "SQL Injection Testing...\n";
+    //std::cout << "Injection Testing...\n";
     logChecker("CheckOther::checkImproperNeutralizationElements");
 
     std::set<const Token *> varToken;               // Token 객체 포인터 저장
@@ -171,7 +171,7 @@ void CheckOther::checkImproperNeutralizationElements()
         // 추가 검사 함수 있을 시 작성
     };
 
-    // SQL 쿼리 안전하게 인코딩하기 위한 함수에 있을만한 키워드 
+    // 안전하게 인코딩하기 위한 함수에 있을만한 키워드 
     std::set<std::string> keywordInSafeFunc ={
         "encode", "escape", "quote",                // 추가 키워드 필요 시 작성
     };
@@ -241,8 +241,9 @@ void CheckOther::checkImproperNeutralizationElements()
                             if(sameLineTokens.size() < 3)
                                 break;
                             // 취약하다고 판단 
-                            std::cout << "⚠️   Warning : Variable \"" << tokenStr << " in " << funcName 
-                                    << "\" is used without proper validation at line " << tokLine << "\n";
+                            checkImproperNeutralizationElementsError(tok);
+                            //std::cout << "⚠️   Warning : Variable \"" << tokenStr << " in " << funcName 
+                            //        << "\" is used without proper validation at line " << tokLine << "\n";
                         }
                     }
                 }
@@ -254,6 +255,12 @@ void CheckOther::checkImproperNeutralizationElements()
         sameLineTokens.push_back(tok);
     }
     
+}
+
+void CheckOther::checkImproperNeutralizationElementsError(const Token *tok)
+{
+    reportError(tok, Severity::error, "OS Injection",
+        "Improper Neutralization of Special Elements used in an OS Command", CWE78, Certainty::inconclusive);
 }
 
 //---------------------------------------------------------------------------
