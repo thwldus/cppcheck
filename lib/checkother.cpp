@@ -171,6 +171,11 @@ void CheckOther::checkImproperNeutralizationElements()
         // 추가 검사 함수 있을 시 작성
     };
 
+    // SQL 쿼리 안전하게 인코딩하기 위한 함수에 있을만한 키워드 
+    std::set<std::string> keywordInSafeFunc ={
+        "encode", "escape", "quote",                // 추가 키워드 필요 시 작성
+    };
+
     for (const Token *tok = mTokenizer->tokens(); tok; tok = tok->next()) {
         std::string tokenStr = tok->str();
         int tokLine = tok->linenr();
@@ -187,7 +192,7 @@ void CheckOther::checkImproperNeutralizationElements()
                 // 새로운 token 발견 -> 저장
                 varToken.insert(tok);
                 varString.insert(tokenStr);
-                std::cout << "vari: " << tokenStr << " at line " << tokLine << "&" << tok->index() << "\n";
+                //std::cout << "vari: " << tokenStr << " at line " << tokLine << "&" << tok->index() << "\n";
             } else {
                 // 중복된 token 
                 const Token *existingToken = nullptr;
@@ -209,13 +214,24 @@ void CheckOther::checkImproperNeutralizationElements()
                 for (const Token *sameTok : sameLineTokens) {
                     if (sameTok->isNameOnly()) { 
                         std::string funcName = sameTok->str();
+                        std::string lowerFuncName = funcName;
+                        std::transform(lowerFuncName.begin(), lowerFuncName.end(), lowerFuncName.begin(),
+                                        [](unsigned char c) { return std::tolower(c); });
                         
-                        if(funcName.find("encode") != std::string::npos){
+                        bool containsKeyword = false;
+                        for (const std::string& keyword : keywordInSafeFunc) {
+                            if (lowerFuncName.find(keyword) != std::string::npos) {
+                                containsKeyword = true;
+                                break;  
+                            }
+                        }
+
+                        if(containsKeyword){
                             // 인코딩 함수에서 보통 첫번째가 encode되어 저장된 변수 
                             if (sameLineTokens.size() > 3)
                                 break;
                             // varToken에서 existingToken 제거
-                            std::cout << "Removed variable: " << existingToken->str() << " from varToken\n";
+                            //std::cout << "Removed variable: " << existingToken->str() << " from varToken\n";
                             varToken.erase(existingToken);
                         }
                         // 인젝션 위험 함수이면서 existingToken이 nullptr이 아니라면(varToken에 있는 변수),
