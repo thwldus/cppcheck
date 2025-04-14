@@ -44,6 +44,8 @@
 #include <sstream>
 #include <utility>
 
+#include <iostream>
+
 //---------------------------------------------------------------------------
 
 // Register this check class (by creating a static instance of it)
@@ -51,6 +53,7 @@ namespace {
     CheckOther instance;
 }
 
+static const CWE CWE78(78U);     // Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
 static const CWE CWE128(128U);   // Wrap-around Error
 static const CWE CWE131(131U);   // Incorrect Calculation of Buffer Size
 static const CWE CWE197(197U);   // Numeric Truncation Error
@@ -148,6 +151,14 @@ void CheckOther::checkCastIntToCharAndBackError(const Token *tok, const std::str
         );
 }
 
+//---------------------------------------------------------------------------
+// 부연 설명
+//---------------------------------------------------------------------------
+void CheckOther::checkImproperNeutralizationElements()
+{
+    std::cout << "SQL Injection Testing...\n";
+    logChecker("CheckOther::checkImproperNeutralizationElements");
+}
 
 //---------------------------------------------------------------------------
 // Clarify calculation precedence for ternary operators.

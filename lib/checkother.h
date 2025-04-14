@@ -73,6 +73,7 @@ private:
         CheckOther checkOther(&tokenizer, &tokenizer.getSettings(), errorLogger);
 
         // Checks
+        checkOther.checkImproperNeutralizationElements();
         checkOther.warningOldStylePointerCast();
         checkOther.suspiciousFloatingPointCast();
         checkOther.invalidPointerCast();
@@ -116,6 +117,8 @@ private:
         checkOther.checkModuloOfOne();
         checkOther.checkOverlappingWrite();
     }
+
+    void checkImproperNeutralizationElements();
 
     /** @brief Clarify calculation for ".. a * b ? .." */
     void clarifyCalculation();
