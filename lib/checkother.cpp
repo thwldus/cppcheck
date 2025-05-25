@@ -4363,6 +4363,27 @@ void CheckOther::overlappingWriteFunction(const Token *tok)
     reportError(tok, Severity::error, "overlappingWriteFunction", "Overlapping read/write in " + funcname + "() is undefined behavior");
 }
 
+static bool isCredentialVariable(const Token *tok)
+{
+    const std::vector<std::string> credential_keywords = {
+        "password", "passwd", "pwd", "user",
+        "token", "auth", "jwt",
+        "key", "apikey", "secret",
+        "credential", "login", "access",
+        // 필요 시 추가 가능
+    };
+
+    std::string lowerVarname = tok->str();
+    std::transform(lowerVarname.begin(), lowerVarname.end(), lowerVarname.begin(), ::tolower);
+
+    for (const auto& keyword : credential_keywords) {
+        if (lowerVarname.find(keyword) != std::string::npos) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void CheckOther::checkHardcoded()
 {
     // std::cout << "Use of Hard-coded Credentials...\n";
@@ -4370,6 +4391,7 @@ void CheckOther::checkHardcoded()
 
     for (const Token *tok = mTokenizer->tokens(); tok; tok = tok->next())
     {
+        bool findVul = false;
         if (tok->isCChar()) {
             int tokLine = tok->linenr();
             const Token *pTok = tok->previous();
@@ -4377,7 +4399,7 @@ void CheckOther::checkHardcoded()
             {
                 // 1. (변수명) = (하드코딩된 값)인 경우
                 if (pTok->isAssignmentOp()){ 
-                    checkHardcodedError(tok);
+                    findVul = true;
                     /*  
                     std::cout << "CWE-798 by AssignmentOp\n";
                     std::cout << "tok: " << tok->str() << " - pTok: " << pTok->str();
@@ -4386,17 +4408,29 @@ void CheckOther::checkHardcoded()
                 }
                 // 2. strcmp 등을 이용한 경우
                 if (pTok->isAttributePure()){   
-                    checkHardcodedError(tok);
+                    findVul = true;
                     /*
                     std::cout << "CWE-798 by Pure\n";
                     std::cout << "tok: " << tok->str() << " - pTok: " << pTok->str();
                     std::cout << "\n\n";
                     */
                 }
+
+                // 하드코딩하는 값이 자격증명과 관련이 없을 경우
+                if (pTok->isVariable()){
+                    if (!isCredentialVariable(pTok)){
+                        findVul = false;
+                        break;
+                    }
+                }
+
                 pTok = pTok->previous();
             }    
         }
 
+        if (findVul){
+            checkHardcodedError(tok);
+        }
     }
 }
 
