@@ -44,6 +44,8 @@
 #include <sstream>
 #include <utility>
 
+#include <iostream>
+
 //---------------------------------------------------------------------------
 
 // Register this check class (by creating a static instance of it)
@@ -51,6 +53,7 @@ namespace {
     CheckOther instance;
 }
 
+static const CWE CWE78(78U);     // Improper Neutralization of Special Elements used in an OS Command ('OS Command Injection')
 static const CWE CWE128(128U);   // Wrap-around Error
 static const CWE CWE131(131U);   // Incorrect Calculation of Buffer Size
 static const CWE CWE197(197U);   // Numeric Truncation Error
@@ -148,6 +151,117 @@ void CheckOther::checkCastIntToCharAndBackError(const Token *tok, const std::str
         );
 }
 
+//---------------------------------------------------------------------------
+// 부연 설명
+//---------------------------------------------------------------------------
+void CheckOther::checkImproperNeutralizationElements()
+{
+    //std::cout << "Injection Testing...\n";
+    logChecker("CheckOther::checkImproperNeutralizationElements");
+
+    std::set<const Token *> varToken;               // Token 객체 포인터 저장
+    std::set<std::string> varString;                // Token의 str 중복 검사용 
+    std::vector<const Token *> sameLineTokens;      // 같은 줄에 있는 토큰 저장
+    int currentLine = -1;                           // 현재 라인 번호
+
+    std::set<std::string> checkFuncs = {
+        "sprintf", "snprintf",                      // 문자열 포맷팅
+        "strcpy", "strncpy",                        // 문자열 복사
+        "strcat", "strncat",                        // 문자열 연결 
+        // 추가 검사 함수 있을 시 작성
+    };
+
+    // 안전하게 인코딩하기 위한 함수에 있을만한 키워드 
+    std::set<std::string> keywordInSafeFunc ={
+        "encode", "escape", "quote",                // 추가 키워드 필요 시 작성
+    };
+
+    for (const Token *tok = mTokenizer->tokens(); tok; tok = tok->next()) {
+        std::string tokenStr = tok->str();
+        int tokLine = tok->linenr();
+
+        // 새로운 라인으로 이동하면 sameLineTokens 초기화
+        if (tokLine != currentLine) {
+            sameLineTokens.clear();
+            currentLine = tokLine;
+        }
+        
+        if (tok->isVariable()) {            
+            auto it = varString.find(tokenStr);
+            if (it == varString.end()) {
+                // 새로운 token 발견 -> 저장
+                varToken.insert(tok);
+                varString.insert(tokenStr);
+                //std::cout << "vari: " << tokenStr << " at line " << tokLine << "&" << tok->index() << "\n";
+            } else {
+                // 중복된 token 
+                const Token *existingToken = nullptr;
+                for (const Token *vtok : varToken) {
+                    if (vtok->str().find(tokenStr) != std::string::npos) {
+                        existingToken = vtok;  
+                        break;  
+                    }
+                }
+                // 이미 검사를 수행한 변수로 중복 검사용 문자열 집합에는 있지만,
+                // varToken에는 존재하지 않는 변수이므로 다음 검사 진행 
+                if(existingToken == nullptr)
+                    continue;   
+
+                
+                // 같은 라인의 토큰 검사
+                // 1. 함수 이름 중에 encode 키워드가 들어가면 varToken에서 제외
+                // 2. 인젝션 위험 함수이면 취약점 보고 
+                for (const Token *sameTok : sameLineTokens) {
+                    if (sameTok->isNameOnly()) { 
+                        std::string funcName = sameTok->str();
+                        std::string lowerFuncName = funcName;
+                        std::transform(lowerFuncName.begin(), lowerFuncName.end(), lowerFuncName.begin(),
+                                        [](unsigned char c) { return std::tolower(c); });
+                        
+                        bool containsKeyword = false;
+                        for (const std::string& keyword : keywordInSafeFunc) {
+                            if (lowerFuncName.find(keyword) != std::string::npos) {
+                                containsKeyword = true;
+                                break;  
+                            }
+                        }
+
+                        if(containsKeyword){
+                            // 인코딩 함수에서 보통 첫번째가 encode되어 저장된 변수 
+                            if (sameLineTokens.size() > 3)
+                                break;
+                            // varToken에서 existingToken 제거
+                            //std::cout << "Removed variable: " << existingToken->str() << " from varToken\n";
+                            varToken.erase(existingToken);
+                        }
+                        // 인젝션 위험 함수이면서 existingToken이 nullptr이 아니라면(varToken에 있는 변수),
+                        // 별도의 검사과정을 거치지 않은 것이므로 취약하다고 판단
+                        if(checkFuncs.find(funcName) != checkFuncs.end()){
+                            // 검사 함수들의 dest인 첫번째 매개변수에 대해서도 취약하다고 판단하기 때문 
+                            if(sameLineTokens.size() < 3)
+                                break;
+                            // 취약하다고 판단 
+                            checkImproperNeutralizationElementsError(tok);
+                            //std::cout << "⚠️   Warning : Variable \"" << tokenStr << " in " << funcName 
+                            //        << "\" is used without proper validation at line " << tokLine << "\n";
+                        }
+                    }
+                }
+                
+            }
+        }
+
+        // 현재 라인의 토큰 리스트 업데이트
+        sameLineTokens.push_back(tok);
+    }
+    
+}
+
+void CheckOther::checkImproperNeutralizationElementsError(const Token *tok)
+{
+    reportError(tok, Severity::error, "OS Injection",
+        "Improper Neutralization of Special Elements used in an OS Command", CWE78, Certainty::inconclusive);
+}
 
 //---------------------------------------------------------------------------
 // Clarify calculation precedence for ternary operators.

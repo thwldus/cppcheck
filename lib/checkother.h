@@ -73,6 +73,7 @@ private:
         CheckOther checkOther(&tokenizer, &tokenizer.getSettings(), errorLogger);
 
         // Checks
+        checkOther.checkImproperNeutralizationElements();
         checkOther.warningOldStylePointerCast();
         checkOther.suspiciousFloatingPointCast();
         checkOther.invalidPointerCast();
@@ -116,6 +117,8 @@ private:
         checkOther.checkModuloOfOne();
         checkOther.checkOverlappingWrite();
     }
+
+    void checkImproperNeutralizationElements();
 
     /** @brief Clarify calculation for ".. a * b ? .." */
     void clarifyCalculation();
@@ -239,6 +242,7 @@ private:
     void overlappingWriteFunction(const Token *tok);
 
     // Error messages..
+    void checkImproperNeutralizationElementsError(const Token* tok);
     void checkComparisonFunctionIsAlwaysTrueOrFalseError(const Token* tok, const std::string &functionName, const std::string &varName, bool result);
     void checkCastIntToCharAndBackError(const Token *tok, const std::string &strFunctionName);
     void clarifyCalculationError(const Token *tok, const std::string &op);
@@ -309,6 +313,7 @@ private:
         c.invalidFreeError(nullptr, "malloc", false);
         c.overlappingWriteUnion(nullptr);
         c.overlappingWriteFunction(nullptr);
+        c.checkImproperNeutralizationElementsError(nullptr);
 
         //performance
         c.redundantCopyError(nullptr,  "varname");
