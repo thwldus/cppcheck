@@ -4370,7 +4370,7 @@ void CheckOther::checkHardcoded()
 
     for (const Token *tok = mTokenizer->tokens(); tok; tok = tok->next())
     {
-        if (tok->isLiteral()) {
+        if (tok->isCChar()) {
             int tokLine = tok->linenr();
             const Token *pTok = tok->previous();
             while (pTok && pTok->linenr() == tokLine)
