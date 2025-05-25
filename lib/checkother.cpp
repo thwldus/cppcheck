@@ -72,6 +72,7 @@ static const CWE CWE704(704U);   // Incorrect Type Conversion or Cast
 static const CWE CWE758(758U);   // Reliance on Undefined, Unspecified, or Implementation-Defined Behavior
 static const CWE CWE768(768U);   // Incorrect Short Circuit Evaluation
 static const CWE CWE783(783U);   // Operator Precedence Logic Error
+static const CWE CWE798(798U);   // Use of Hard-coded Credentials
 
 //----------------------------------------------------------------------------------
 // The return value of fgetc(), getc(), ungetc(), getchar() etc. is an integer value.
@@ -4360,4 +4361,39 @@ void CheckOther::overlappingWriteFunction(const Token *tok)
 {
     const std::string &funcname = tok ? tok->str() : emptyString;
     reportError(tok, Severity::error, "overlappingWriteFunction", "Overlapping read/write in " + funcname + "() is undefined behavior");
+}
+
+void CheckOther::checkHardcoded()
+{
+    // std::cout << "Use of Hard-coded Credentials...\n";
+    logChecker("CheckOther::checkHardcoded");
+
+    for (const Token *tok = mTokenizer->tokens(); tok; tok = tok->next())
+    {
+        if (tok->isLiteral()) {
+            int tokLine = tok->linenr();
+            const Token *pTok = tok->previous();
+            while (pTok && pTok->linenr() == tokLine)
+            {
+                // 1. (변수명) = (하드코딩된 값)인 경우
+                if (pTok->isAssignmentOp()){   
+                    std::cout << "CWE-798 by AssignmentOp\n";
+                    std::cout << "tok: " << tok->str() << " - pTok: " << pTok->str();
+                    std::cout << "\n\n";
+                }
+                // 2. strcmp 등을 이용한 경우
+                if (pTok->isAttributePure()){   
+                    std::cout << "CWE-798 by Pure\n";
+                    std::cout << "tok: " << tok->str() << " - pTok: " << pTok->str();
+                    std::cout << "\n\n";
+                }
+
+                if (pTok->isNameOnly())
+                    break;
+
+                pTok = pTok->previous();
+            }    
+        }
+
+    }
 }

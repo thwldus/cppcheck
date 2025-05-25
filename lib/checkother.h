@@ -116,6 +116,7 @@ private:
         checkOther.checkAccessOfMovedVariable();
         checkOther.checkModuloOfOne();
         checkOther.checkOverlappingWrite();
+        checkOther.checkHardcoded();
     }
 
     void checkImproperNeutralizationElements();
@@ -240,6 +241,8 @@ private:
     void checkOverlappingWrite();
     void overlappingWriteUnion(const Token *tok);
     void overlappingWriteFunction(const Token *tok);
+
+    void checkHardcoded();
 
     // Error messages..
     void checkImproperNeutralizationElementsError(const Token* tok);
