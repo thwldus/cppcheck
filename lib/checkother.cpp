@@ -4376,20 +4376,34 @@ void CheckOther::checkHardcoded()
             while (pTok && pTok->linenr() == tokLine)
             {
                 // 1. (변수명) = (하드코딩된 값)인 경우
-                if (pTok->isAssignmentOp()){   
+                if (pTok->isAssignmentOp()){ 
+                    checkHardcodedError(tok);
+                    /*  
                     std::cout << "CWE-798 by AssignmentOp\n";
                     std::cout << "tok: " << tok->str() << " - pTok: " << pTok->str();
                     std::cout << "\n\n";
+                    */
                 }
                 // 2. strcmp 등을 이용한 경우
                 if (pTok->isAttributePure()){   
+                    checkHardcodedError(tok);
+                    /*
                     std::cout << "CWE-798 by Pure\n";
                     std::cout << "tok: " << tok->str() << " - pTok: " << pTok->str();
                     std::cout << "\n\n";
+                    */
                 }
                 pTok = pTok->previous();
             }    
         }
 
     }
+}
+
+void CheckOther::checkHardcodedError(const Token * tok)
+{
+    reportError(tok, Severity::error, 
+                "Use of Hard-coded Credentials",
+                "The product contains hard-coded credentials, such as a password or cryptographic key.", 
+                CWE798, Certainty::inconclusive);
 }

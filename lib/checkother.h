@@ -302,6 +302,7 @@ private:
     void knownPointerToBoolError(const Token* tok, const ValueFlow::Value* value);
     void comparePointersError(const Token *tok, const ValueFlow::Value *v1, const ValueFlow::Value *v2);
     void checkModuloOfOneError(const Token *tok);
+    void checkHardcodedError(const Token *tok);
 
     void getErrorMessages(ErrorLogger *errorLogger, const Settings *settings) const override {
         CheckOther c(nullptr, settings, errorLogger);
@@ -317,6 +318,7 @@ private:
         c.overlappingWriteUnion(nullptr);
         c.overlappingWriteFunction(nullptr);
         c.checkImproperNeutralizationElementsError(nullptr);
+        c.checkHardcodedError(nullptr);
 
         //performance
         c.redundantCopyError(nullptr,  "varname");
