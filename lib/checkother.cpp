@@ -4387,10 +4387,6 @@ void CheckOther::checkHardcoded()
                     std::cout << "tok: " << tok->str() << " - pTok: " << pTok->str();
                     std::cout << "\n\n";
                 }
-
-                if (pTok->isNameOnly())
-                    break;
-
                 pTok = pTok->previous();
             }    
         }
