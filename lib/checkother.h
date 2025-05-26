@@ -116,6 +116,7 @@ private:
         checkOther.checkAccessOfMovedVariable();
         checkOther.checkModuloOfOne();
         checkOther.checkOverlappingWrite();
+        checkOther.checkHardcoded();
     }
 
     void checkImproperNeutralizationElements();
@@ -241,6 +242,8 @@ private:
     void overlappingWriteUnion(const Token *tok);
     void overlappingWriteFunction(const Token *tok);
 
+    void checkHardcoded();
+
     // Error messages..
     void checkImproperNeutralizationElementsError(const Token* tok);
     void checkComparisonFunctionIsAlwaysTrueOrFalseError(const Token* tok, const std::string &functionName, const std::string &varName, bool result);
@@ -299,6 +302,7 @@ private:
     void knownPointerToBoolError(const Token* tok, const ValueFlow::Value* value);
     void comparePointersError(const Token *tok, const ValueFlow::Value *v1, const ValueFlow::Value *v2);
     void checkModuloOfOneError(const Token *tok);
+    void checkHardcodedError(const Token *tok);
 
     void getErrorMessages(ErrorLogger *errorLogger, const Settings *settings) const override {
         CheckOther c(nullptr, settings, errorLogger);
@@ -314,6 +318,7 @@ private:
         c.overlappingWriteUnion(nullptr);
         c.overlappingWriteFunction(nullptr);
         c.checkImproperNeutralizationElementsError(nullptr);
+        c.checkHardcodedError(nullptr);
 
         //performance
         c.redundantCopyError(nullptr,  "varname");

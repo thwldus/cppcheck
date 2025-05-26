@@ -72,6 +72,7 @@ static const CWE CWE704(704U);   // Incorrect Type Conversion or Cast
 static const CWE CWE758(758U);   // Reliance on Undefined, Unspecified, or Implementation-Defined Behavior
 static const CWE CWE768(768U);   // Incorrect Short Circuit Evaluation
 static const CWE CWE783(783U);   // Operator Precedence Logic Error
+static const CWE CWE798(798U);   // Use of Hard-coded Credentials
 
 //----------------------------------------------------------------------------------
 // The return value of fgetc(), getc(), ungetc(), getchar() etc. is an integer value.
@@ -4360,4 +4361,83 @@ void CheckOther::overlappingWriteFunction(const Token *tok)
 {
     const std::string &funcname = tok ? tok->str() : emptyString;
     reportError(tok, Severity::error, "overlappingWriteFunction", "Overlapping read/write in " + funcname + "() is undefined behavior");
+}
+
+static bool isCredentialVariable(const Token *tok)
+{
+    const std::vector<std::string> credential_keywords = {
+        "password", "passwd", "pwd", "user",
+        "token", "auth", "jwt",
+        "key", "apikey", "secret",
+        "credential", "login", "access",
+        // 필요 시 추가 가능
+    };
+
+    std::string lowerVarname = tok->str();
+    std::transform(lowerVarname.begin(), lowerVarname.end(), lowerVarname.begin(), ::tolower);
+
+    for (const auto& keyword : credential_keywords) {
+        if (lowerVarname.find(keyword) != std::string::npos) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void CheckOther::checkHardcoded()
+{
+    // std::cout << "Use of Hard-coded Credentials...\n";
+    logChecker("CheckOther::checkHardcoded");
+
+    for (const Token *tok = mTokenizer->tokens(); tok; tok = tok->next())
+    {
+        bool findVul = false;
+        if (tok->isCChar()) {
+            int tokLine = tok->linenr();
+            const Token *pTok = tok->previous();
+            while (pTok && pTok->linenr() == tokLine)
+            {
+                // 1. (변수명) = (하드코딩된 값)인 경우
+                if (pTok->isAssignmentOp()){ 
+                    findVul = true;
+                    /*  
+                    std::cout << "CWE-798 by AssignmentOp\n";
+                    std::cout << "tok: " << tok->str() << " - pTok: " << pTok->str();
+                    std::cout << "\n\n";
+                    */
+                }
+                // 2. strcmp 등을 이용한 경우
+                if (pTok->isAttributePure()){   
+                    findVul = true;
+                    /*
+                    std::cout << "CWE-798 by Pure\n";
+                    std::cout << "tok: " << tok->str() << " - pTok: " << pTok->str();
+                    std::cout << "\n\n";
+                    */
+                }
+
+                // 하드코딩하는 값이 자격증명과 관련이 없을 경우
+                if (pTok->isVariable()){
+                    if (!isCredentialVariable(pTok)){
+                        findVul = false;
+                        break;
+                    }
+                }
+
+                pTok = pTok->previous();
+            }    
+        }
+
+        if (findVul){
+            checkHardcodedError(tok);
+        }
+    }
+}
+
+void CheckOther::checkHardcodedError(const Token * tok)
+{
+    reportError(tok, Severity::error, 
+                "Use of Hard-coded Credentials",
+                "The product contains hard-coded credentials, such as a password or cryptographic key.", 
+                CWE798, Certainty::inconclusive);
 }
