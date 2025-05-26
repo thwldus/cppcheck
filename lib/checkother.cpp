@@ -168,6 +168,7 @@ void CheckOther::checkImproperNeutralizationElements()
     // 외부 입력(Source)을 수신하는 함수
     std::set<std::string> inputFuncs = {
         "recv", "read", "fgets", "gets", "scanf",
+        "fgetws", "getws",
     };
 
     // 민감한 처리(Sink)를 수행하는 함수
