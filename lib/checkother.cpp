@@ -153,7 +153,7 @@ void CheckOther::checkCastIntToCharAndBackError(const Token *tok, const std::str
 }
 
 //---------------------------------------------------------------------------
-// 부연 설명
+// Check for special elements that are not neutralized or incorrectly neutralized when sent to downstream components
 //---------------------------------------------------------------------------
 void CheckOther::checkImproperNeutralizationElements()
 {
@@ -165,6 +165,12 @@ void CheckOther::checkImproperNeutralizationElements()
     std::vector<const Token *> sameLineTokens;      // 같은 줄에 있는 토큰 저장
     int currentLine = -1;                           // 현재 라인 번호
 
+    // 외부 입력(Source)을 수신하는 함수
+    std::set<std::string> inputFuncs = {
+        "recv", "read", "fgets", "gets", "scanf",
+    };
+
+    // 민감한 처리(Sink)를 수행하는 함수
     std::set<std::string> checkFuncs = {
         "sprintf", "snprintf",                      // 문자열 포맷팅
         "strcpy", "strncpy",                        // 문자열 복사
@@ -187,6 +193,25 @@ void CheckOther::checkImproperNeutralizationElements()
             currentLine = tokLine;
         }
         
+        // case1: 입력(Source) 관련 
+        if (tok->isName() && inputFuncs.find(tok->str()) != inputFuncs.end()) {
+            const Token* funcTok = tok;
+            const Token* arg1 = funcTok->tokAt(2); 
+
+            if (arg1 && (arg1->isName() || arg1->str() == "(")) {
+                const Token* varTok = (arg1->str() == "(" && arg1->next()) ? arg1->next() : arg1;
+
+                while (varTok && varTok->str() != "," && varTok->str() != ")") {
+                    if (varTok->isName()) {
+                        checkImproperNeutralizationElementsError(varTok);
+                        break;
+                    }
+                    varTok = varTok->next();
+                }
+            }
+        }
+
+        // case2: 처리(Sink) 관련 
         if (tok->isVariable()) {            
             auto it = varString.find(tokenStr);
             if (it == varString.end()) {
@@ -241,10 +266,7 @@ void CheckOther::checkImproperNeutralizationElements()
                             // 검사 함수들의 dest인 첫번째 매개변수에 대해서도 취약하다고 판단하기 때문 
                             if(sameLineTokens.size() < 3)
                                 break;
-                            // 취약하다고 판단 
                             checkImproperNeutralizationElementsError(tok);
-                            //std::cout << "⚠️   Warning : Variable \"" << tokenStr << " in " << funcName 
-                            //        << "\" is used without proper validation at line " << tokLine << "\n";
                         }
                     }
                 }
